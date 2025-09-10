@@ -1,115 +1,65 @@
+# main.py
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import text
-import models
-from database import engine, SessionLocal
-from routers import blog, auth, comment
 import logging
-import os
-import sys
+
+# --- MODIFIED: Import our new models and async engine ---
+import models
+from database import engine, Base
+
+# --- MODIFIED: Import all our new and refactored routers ---
+from routers import auth, posts, comments, images, albums
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-def create_uploads_directory():
-    """Create uploads directory if it doesn't exist"""
-    try:
-        if not os.path.exists("uploads"):
-            os.makedirs("uploads")
-            logger.info("Created uploads directory")
-        return True
-    except Exception as e:
-        logger.error(f"Failed to create uploads directory: {e}")
-        return False
+# --- MODIFIED: The startup event is now async ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Application startup...")
+    async with engine.begin() as conn:
+        # This creates the database tables if they don't exist
+        await conn.run_sync(Base.metadata.create_all)
+        logger.info("Database tables created/verified.")
+    yield
+    logger.info("Application shutdown...")
 
-def setup_database():
-    """Set up database tables"""
-    try:
-        models.Base.metadata.create_all(bind=engine)
-        logger.info("Database tables created/verified")
-        return True
-    except Exception as e:
-        logger.error(f"Database setup failed: {e}")
-        return False
 
-def test_db_connection():
-    """Test database connection"""
-    try:
-        db = SessionLocal()
-        db.execute(text("SELECT 1"))
-        db.close()
-        logger.info("✅ Database connection successful")
-        return True
-    except Exception as e:
-        logger.error(f"❌ Database connection failed: {str(e)}")
-        return False
-
-# Initialize components
-try:
-    create_uploads_directory()
-    setup_database()
-    db_connected = test_db_connection()
-except Exception as e:
-    logger.critical(f"Failed to initialize application: {e}")
-    # Don't crash immediately, let the app start but log the error
-
-# Initialize FastAPI app
+# Initialize FastAPI app with a new title and the async lifespan manager
 app = FastAPI(
-    title="Chyrp",
-    description="backend of chryp",
-    version="1.0.0"
+    title="CloneFest 2025 - Image Gallery API",
+    description="A modern, extensible media platform API.",
+    version="1.0.0",
+    lifespan=lifespan
 )
 
-# Add CORS middleware
+# Add CORS middleware (no change needed)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"], # In production, restrict this to your frontend's domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers
-try:
-    app.include_router(auth.router)
-    app.include_router(blog.router)
-    app.include_router(comment.router)
-    logger.info("Routers registered successfully")
-except Exception as e:
-    logger.error(f"Failed to register routers: {e}")
+# --- MODIFIED: Include all the new routers ---
+logger.info("Registering routers...")
+app.include_router(auth.router)
+app.include_router(posts.router)
+app.include_router(comments.router)
+app.include_router(images.router)
+app.include_router(albums.router)
+logger.info("Routers registered successfully.")
 
-# Serve uploaded files only if directory exists
-try:
-    if os.path.exists("uploads"):
-        app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-        logger.info("Serving uploads from filesystem")
-    else:
-        logger.warning("Uploads directory does not exist, file serving disabled")
-except Exception as e:
-    logger.error(f"Failed to setup static files: {e}")
+# --- REMOVED: All code related to the local 'uploads' directory ---
 
 # Health check endpoint
-@app.get("/")
+@app.get("/", tags=["Health Check"])
 def read_root():
     return {
-        "message": "Modern Chyrp API is running",
+        "message": "Image Gallery API is running",
         "status": "healthy",
-        "docs": "/docs"
+        "docs_url": "/docs"
     }
-
-# Health check endpoint with database status
-@app.get("/health")
-def health_check():
-    try:
-        db = SessionLocal()
-        db.execute(text("SELECT 1"))
-        db.close()
-        return {"status": "healthy", "database": "connected"}
-    except Exception as e:
-        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
