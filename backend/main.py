@@ -1,21 +1,19 @@
 # main.py
-from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from contextlib import asynccontextmanager
 
-# --- MODIFIED: Import our new models and async engine ---
 import models
 from database import engine, Base
-
-# --- MODIFIED: Import all our new and refactored routers ---
 from routers import auth, posts, comments, images, albums
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# --- MODIFIED: The startup event is now async ---
+# The startup event is now async
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Application startup...")
@@ -35,16 +33,25 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware (no change needed)
+# This is the CORS "guest list" configuration.
+# For production, you should restrict this to your frontend's actual URL.
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:5173", # Default for Vite/React dev server
+    "https://clonefest.up.railway.app/", # Default for Vite/React dev server
+    # "https://your-vercel-frontend-url.vercel.app", # <-- ADD YOUR DEPLOYED FRONTEND URL HERE
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to your frontend's domain
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=origins,  # The list of "guests" who are allowed to talk to the API
+    allow_credentials=True, # Allows cookies to be included in requests
+    allow_methods=["*"],    # Allows all methods (GET, POST, etc.)
+    allow_headers=["*"],    # Allows all headers
 )
 
-# --- MODIFIED: Include all the new routers ---
+# Include all the new routers
 logger.info("Registering routers...")
 app.include_router(auth.router)
 app.include_router(posts.router)
@@ -52,8 +59,6 @@ app.include_router(comments.router)
 app.include_router(images.router)
 app.include_router(albums.router)
 logger.info("Routers registered successfully.")
-
-# --- REMOVED: All code related to the local 'uploads' directory ---
 
 # Health check endpoint
 @app.get("/", tags=["Health Check"])
