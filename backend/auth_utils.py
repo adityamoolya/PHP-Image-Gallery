@@ -1,10 +1,13 @@
+# auth_utils.py
+
 import os
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
+from fastapi.security import OAuth2PasswordBearer 
+# --- MODIFIED: Import AsyncSession for type hinting ---
+from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
 from database import get_db
@@ -14,71 +17,49 @@ import schemas
 # Set up logging
 logger = logging.getLogger(__name__)
 
-# Use environment variable for secret key
-SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key-here-change-in-production")
+# Use environment variable for secret key from .env file
+SECRET_KEY = os.getenv("SECRET_KEY", "a_very_secret_key_for_local_dev")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
-# Password hashing
+# Password hashing (No change needed)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-# OAuth2 scheme
+# OAuth2 scheme (No change needed)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-# Verify password
+# Verify password (No change needed)
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    try:
-        return pwd_context.verify(plain_password, hashed_password)
-    except Exception as e:
-        logger.error(f"Password verification error: {e}")
-        return False
+    return pwd_context.verify(plain_password, hashed_password)
 
-# Hash password
+# Hash password (No change needed)
 def get_password_hash(password: str) -> str:
-    try:
-        return pwd_context.hash(password)
-    except Exception as e:
-        logger.error(f"Password hashing error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error processing password"
-        )
+    return pwd_context.hash(password)
 
-# Authenticate user
-def authenticate_user(db: Session, username: str, password: str):
-    try:
-        user = crud.get_user_by_username(db, username)
-        if not user:
-            return False
-        if not verify_password(password, user.hashed_password):
-            return False
-        return user
-    except Exception as e:
-        logger.error(f"Authentication error for user {username}: {e}")
-        return False
+# --- MODIFIED: This function is now async and awaits the crud call ---
+async def authenticate_user(db: AsyncSession, username: str, password: str):
+    user = await crud.get_user_by_username(db, username)
+    if not user:
+        return None
+    if not verify_password(password, user.hashed_password):
+        return None
+    return user
 
-# Create access token
+# Create access token (No change needed)
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
-    try:
-        to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.utcnow() + expires_delta
-        else:
-            expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-        return encoded_jwt
-    except Exception as e:
-        logger.error(f"Token creation error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error creating access token"
-        )
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
 
-# Get current user from token
+# --- MODIFIED: This function now awaits the async crud call ---
 async def get_current_user(
     token: str = Depends(oauth2_scheme), 
-    db: Session = Depends(get_db)
+    db: AsyncSession = Depends(get_db)
 ) -> schemas.User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -90,36 +71,20 @@ async def get_current_user(
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         username: str = payload.get("sub")
         if username is None:
-            logger.warning("Token missing subject")
             raise credentials_exception
             
-        exp = payload.get("exp")
-        if exp and datetime.utcnow() > datetime.fromtimestamp(exp):
-            logger.warning("Token has expired")
-            raise credentials_exception
-            
-    except JWTError as e:
-        logger.warning(f"JWT error: {e}")
+    except JWTError:
         raise credentials_exception
     
-    try:
-        user = crud.get_user_by_username(db, username=username)
-        if user is None:
-            logger.warning(f"User not found: {username}")
-            raise credentials_exception
-        return user
-    except Exception as e:
-        logger.error(f"Database error during user lookup: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving user information"
-        )
+    user = await crud.get_user_by_username(db, username=username)
+    if user is None:
+        raise credentials_exception
+    return user
 
-# Get current active user
+# Get current active user (No change needed, it works with the async get_current_user)
 async def get_current_active_user(
     current_user: schemas.User = Depends(get_current_user)
 ) -> schemas.User:
     if not current_user.is_active:
-        logger.warning(f"Inactive user attempt: {current_user.username}")
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user

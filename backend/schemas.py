@@ -1,12 +1,17 @@
+# schemas.py
+
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import List, Optional
+# --- IMPORTED: The Enums from our new models file ---
+from models import PostPrivacy, UserRole
 
-# User Schemas
+# --- User Schemas ---
 class UserBase(BaseModel):
     username: str
     email: EmailStr
-    role: str = "viewer"
+    # --- MODIFIED: Using the UserRole Enum for validation ---
+    role: UserRole = UserRole.visitor
 
 class UserCreate(UserBase):
     password: str
@@ -19,7 +24,7 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
-# Authentication Schemas
+# --- Authentication Schemas (No change needed) ---
 class Token(BaseModel):
     access_token: str
     token_type: str
@@ -27,22 +32,22 @@ class Token(BaseModel):
 class TokenData(BaseModel):
     username: Optional[str] = None
 
-# Category Schemas
-class CategoryBase(BaseModel):
+# --- RENAMED: from Category to Album Schemas ---
+class AlbumBase(BaseModel):
     name: str
     description: Optional[str] = None
 
-class CategoryCreate(CategoryBase):
+class AlbumCreate(AlbumBase):
     pass
 
-class Category(CategoryBase):
+class Album(AlbumBase):
     id: int
     created_at: datetime
 
     class Config:
         from_attributes = True
 
-# Tag Schemas
+# --- Tag Schemas (No change needed) ---
 class TagBase(BaseModel):
     name: str
 
@@ -56,7 +61,7 @@ class Tag(TagBase):
     class Config:
         from_attributes = True
 
-# Comment Schemas
+# --- Comment Schemas ---
 class CommentBase(BaseModel):
     content: str
 
@@ -66,48 +71,53 @@ class CommentCreate(CommentBase):
 class Comment(CommentBase):
     id: int
     author: User
-    blog_id: int
+    # --- RENAMED: from blog_id to post_id ---
+    post_id: int
     created_at: datetime
     is_approved: bool
 
     class Config:
         from_attributes = True
 
-# Blog Schemas
-class BlogBase(BaseModel):
+# --- RENAMED: from Blog to Post Schemas ---
+class PostBase(BaseModel):
     title: str
-    content: str
-    content_type: str = "text"
-    content_format: str = "text"
-    published: bool = True
-    category_id: Optional[int] = None
-    media_content: Optional[str] = None  # Base64 encoded file content
-    media_filename: Optional[str] = None
-    media_type: Optional[str] = None
+    # --- ADDED: New fields for the hackathon requirements ---
+    caption: Optional[str] = None
+    alt_text: Optional[str] = None
+    license: Optional[str] = None
+    privacy: PostPrivacy = PostPrivacy.public
+    album_id: Optional[int] = None
 
-class BlogCreate(BlogBase):
+class PostCreate(PostBase):
+    # --- MODIFIED: The create schema now needs the Cloudinary info ---
+    image_url: str
+    image_public_id: str
     tags: List[str] = []
 
-class Blog(BlogBase):
+class Post(PostBase):
     id: int
     author: User
-    category: Optional[Category] = None
+    # --- MODIFIED: Now includes the Cloudinary URL ---
+    image_url: str
+    # --- RENAMED & MODIFIED: from category to album ---
+    album: Optional[Album] = None
     tags: List[Tag] = []
     comments: List[Comment] = []
     views: int
     likes_count: int = 0
     created_at: datetime
     updated_at: Optional[datetime] = None
-    media_path: Optional[str] = None
 
     class Config:
         from_attributes = True
 
-# Like Schema
+# --- Like Schema ---
 class Like(BaseModel):
     id: int
     user: User
-    blog_id: int
+    # --- RENAMED: from blog_id to post_id ---
+    post_id: int
 
     class Config:
         from_attributes = True
