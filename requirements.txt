@@ -12,7 +12,7 @@ python-dotenv==1.0.1
 psycopg[binary]
 pgvector==0.2.4
 sentence-transformers==2.2.2
-torch==2.1.0
+torch
 transformers==4.35.2
 requests==2.31.0
 numpy==1.24.3
