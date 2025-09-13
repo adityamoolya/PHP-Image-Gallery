@@ -37,10 +37,11 @@ app = FastAPI(
 
 
 origins = [
-    "http://localhost:3000",  # your local frontend development URL
-    "https://clonefest.up.railway.app",  # replace with your deployed frontend URL
+    "http://localhost:3000",
+    "http://localhost:8080",  # add this line
+    "https://clonefest.up.railway.app",
     "https://clonefest.up.railway.app/docs"
-
+    
 ]
 
 app.add_middleware(
