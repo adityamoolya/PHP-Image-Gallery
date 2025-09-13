@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Gallery - CloneFest 2025</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-images"></i>
+                    <h1>Image Gallery</h1>
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" data-filter="all">All Posts</button>
+                    <div class="auth-buttons" id="authButtons">
+                        <button class="nav-btn" id="loginBtn">Login</button>
+                        <button class="nav-btn" id="registerBtn">Register</button>
+                    </div>
+                    <div class="user-menu" id="userMenu" style="display: none;">
+                        <span class="user-info" id="userInfo"></span>
+                        <button class="nav-btn" id="createPostBtn">Create Post</button>
+                        <button class="nav-btn" id="manageAlbumsBtn">Albums</button>
+                        <button class="nav-btn" id="logoutBtn">Logout</button>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Search and Filter Section -->
+            <section class="search-section">
+                <div class="search-bar">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="searchInput" placeholder="Search posts by title, caption, or alt text...">
+                    <button id="searchBtn" class="search-btn">Search</button>
+                </div>
+                <div class="filter-tags" id="filterTags">
+                    <!-- Popular tags will be loaded here -->
+                </div>
+            </section>
+
+            <!-- Loading Spinner -->
+            <div class="loading-spinner" id="loadingSpinner">
+                <div class="spinner"></div>
+                <p>Loading posts...</p>
+            </div>
+
+            <!-- Posts Grid -->
+            <section class="posts-section">
+                <div class="posts-grid" id="postsGrid">
+                    <!-- Posts will be loaded here -->
+                </div>
+                
+                <!-- Load More Button -->
+                <div class="load-more-container">
+                    <button id="loadMoreBtn" class="load-more-btn">
+                        <i class="fas fa-plus"></i>
+                        Load More Posts
+                    </button>
+                </div>
+            </section>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <i class="fas fa-image"></i>
+                <h3>No posts found</h3>
+                <p>Try adjusting your search or filter criteria.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Login Modal -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content auth-modal">
+            <button class="modal-close" id="loginModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="auth-form">
+                <h2>Login</h2>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="loginUsername">Username</label>
+                        <input type="text" id="loginUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Login</button>
+                </form>
+                <p class="auth-switch">
+                    Don't have an account? 
+                    <a href="#" id="showRegister">Register here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register Modal -->
+    <div class="modal" id="registerModal">
+        <div class="modal-content auth-modal">
+            <button class="modal-close" id="registerModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="auth-form">
+                <h2>Register</h2>
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="registerUsername">Username</label>
+                        <input type="text" id="registerUsername" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Register</button>
+                </form>
+                <p class="auth-switch">
+                    Already have an account? 
+                    <a href="#" id="showLogin">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Post Modal -->
+    <div class="modal" id="createPostModal">
+        <div class="modal-content create-post-modal">
+            <button class="modal-close" id="createPostModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="create-post-form">
+                <h2>Create New Post</h2>
+                <form id="createPostForm">
+                    <div class="form-group">
+                        <label for="postTitle">Title *</label>
+                        <input type="text" id="postTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="postCaption">Caption</label>
+                        <textarea id="postCaption" rows="3" placeholder="Describe your image..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="postAltText">Alt Text</label>
+                        <input type="text" id="postAltText" placeholder="Alternative text for accessibility">
+                    </div>
+                    <div class="form-group">
+                        <label for="postLicense">License</label>
+                        <select id="postLicense">
+                            <option value="">Select License</option>
+                            <option value="CC BY">CC BY</option>
+                            <option value="CC BY-SA">CC BY-SA</option>
+                            <option value="CC BY-NC">CC BY-NC</option>
+                            <option value="CC BY-NC-SA">CC BY-NC-SA</option>
+                            <option value="All Rights Reserved">All Rights Reserved</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="postPrivacy">Privacy</label>
+                        <select id="postPrivacy">
+                            <option value="public">Public</option>
+                            <option value="unlisted">Unlisted</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="postAlbum">Album</label>
+                        <select id="postAlbum">
+                            <option value="">No Album</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="postTags">Tags (comma separated)</label>
+                        <input type="text" id="postTags" placeholder="nature, landscape, sunset">
+                    </div>
+                    <div class="form-group">
+                        <label for="postImage">Image *</label>
+                        <input type="file" id="postImage" accept="image/*" required>
+                        <div class="image-preview" id="imagePreview" style="display: none;">
+                            <img id="previewImg" src="" alt="Preview">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelPost">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Post</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Albums Management Modal -->
+    <div class="modal" id="albumsModal">
+        <div class="modal-content albums-modal">
+            <button class="modal-close" id="albumsModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="albums-content">
+                <div class="albums-header">
+                    <h2>Manage Albums</h2>
+                    <button class="btn-primary" id="createAlbumBtn">Create New Album</button>
+                </div>
+                <div class="albums-list" id="albumsList">
+                    <!-- Albums will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Album Modal -->
+    <div class="modal" id="createAlbumModal">
+        <div class="modal-content auth-modal">
+            <button class="modal-close" id="createAlbumModalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="auth-form">
+                <h2>Create Album</h2>
+                <form id="createAlbumForm">
+                    <div class="form-group">
+                        <label for="albumName">Album Name *</label>
+                        <input type="text" id="albumName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="albumDescription">Description</label>
+                        <textarea id="albumDescription" rows="3" placeholder="Describe your album..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelAlbum">Cancel</button>
+                        <button type="submit" class="btn-primary">Create Album</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post Modal -->
+    <div class="modal" id="postModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body">
+                <div class="modal-image">
+                    <img id="modalImage" src="" alt="">
+                </div>
+                <div class="modal-info">
+                    <h2 id="modalTitle"></h2>
+                    <div class="modal-meta">
+                        <span class="author">
+                            <i class="fas fa-user"></i>
+                            <span id="modalAuthor"></span>
+                        </span>
+                        <span class="date">
+                            <i class="fas fa-calendar"></i>
+                            <span id="modalDate"></span>
+                        </span>
+                        <span class="views">
+                            <i class="fas fa-eye"></i>
+                            <span id="modalViews"></span>
+                        </span>
+                    </div>
+                    <div class="modal-caption" id="modalCaption"></div>
+                    <div class="modal-tags" id="modalTags"></div>
+                    <div class="modal-actions">
+                        <button class="action-btn like-btn" id="likeBtn">
+                            <i class="fas fa-heart"></i>
+                            <span id="likeCount">0</span>
+                        </button>
+                        <button class="action-btn share-btn" id="shareBtn">
+                            <i class="fas fa-share"></i>
+                            Share
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2025 CloneFest - Image Gallery. Built with ❤️ for the hackathon.</p>
+        </div>
+    </footer>
+
+    <script src="src/app.js"></script>
+</body>
+</html>
