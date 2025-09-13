@@ -35,14 +35,22 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Add CORS middleware (no change needed)
+
+origins = [
+    "http://localhost:3000",  # your local frontend development URL
+    "https://clonefest.up.railway.app",  # replace with your deployed frontend URL
+    "https://clonefest.up.railway.app/docs"
+
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], # In production, restrict this to your frontend's domain
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # --- MODIFIED: Include all the new routers ---
 logger.info("Registering routers...")
