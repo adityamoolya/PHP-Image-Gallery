@@ -17,18 +17,27 @@ We are also planning to implement **Vector Search 🔍** and **AI Image Generati
 ##✨ Features
 
 ✅ User Authentication – Signup / Login to manage your account
+
 ✅ Image Uploading – Upload your images to the gallery
+
 ✅ Image Management – View, delete, and manage images easily
+
 ✅ Category Support – Organize images into categories
+
 ✅ Tags System – Tag images for easy filtering
+
 ✅ Deployed Backend – Accessible with FastAPI Swagger docs
+
 ✅ Deployed Frontend – Live and working with backend integration
 
 ##🔮 Upcoming Features
 
 🔍 Vector Search – Search images by similarity using embeddings
+
 🎨 AI Image Generation – Generate new images using Hugging Face API
+
 💬 Comments & Likes – Add interactivity to image posts
+
 🗑️ Delete & Edit Support – Manage uploaded content fully
 
 ##⚡ Tech Stack
